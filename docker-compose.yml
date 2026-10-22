@@ -1,0 +1,36 @@
+services:
+  # 1. 启动 MySQL 数据库
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456    # 你的数据库密码
+      MYSQL_DATABASE: lab            # 自动创建 lab 数据库
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql    # 数据挂载到硬盘，防止容器删了数据丢失
+
+  # 2. 启动 Redis 缓存
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  # 3. 启动你的 Java 程序
+  app:
+    build: .                         # 使用当前目录的 Dockerfile 打包
+    ports:
+      - "8080:8080"
+    environment:
+      # 🔥 重点：容器里的程序，不能用 localhost 连数据库，必须用服务名（mysql 和 redis）
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/lab?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+    depends_on:
+      - mysql
+      - redis
+
+# 定义数据卷
+volumes:
+  mysql_data:
